@@ -1,20 +1,76 @@
+// routes/orders.js
 const express = require('express');
-const Order = require('../models/Order');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
 const router = express.Router();
+const Order = require('../models/Order');
+const adminAuth = require('../middleware/adminAuth');
+const jwt = require('jsonwebtoken');
 
-router.post('/', protect, async (req, res) => {
+// Simple user auth middleware (not admin-only)
+const userAuth = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'Not authenticated' });
   try {
-    const order = await Order.create({ ...req.body, user: req.user.id });
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+// POST /api/orders  → place order (authenticated user)
+router.post('/', userAuth, async (req, res) => {
+  try {
+    const { items, total, shippingAddress } = req.body;
+    const order = await Order.create({
+      user: req.user.id,
+      items,
+      total,
+      shippingAddress,
+    });
     res.status(201).json(order);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 });
 
-router.get('/', protect, adminOnly, async (req, res) => {
-  const orders = await Order.find().populate('user', 'name email').populate('items.product', 'name price');
-  res.json(orders);
+// GET /api/orders/my  → logged-in user's orders
+router.get('/my', userAuth, async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.user.id }).sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ─── ADMIN ─────────────────────────────────────────────────────────────────
+
+// GET /api/orders  → all orders with customer info
+router.get('/', adminAuth, async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// PATCH /api/orders/:id/status  → update order status
+router.patch('/:id/status', adminAuth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate('user', 'name email');
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 module.exports = router;

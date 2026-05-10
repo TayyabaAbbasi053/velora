@@ -5,8 +5,6 @@ import { useEffect } from 'react';
 
 const Home = () => {
   const { products, loading } = useProducts();
-  const featured = products.filter(p => p.featured).slice(0, 8);
-  const display  = featured.length > 0 ? featured : products.slice(0, 8);
 
   useEffect(() => {
     document.body.classList.add('page-transition-enter');
@@ -20,10 +18,12 @@ const Home = () => {
         <h2 className="section-title gold-text">Featured Selections</h2>
         {loading ? (
           <p style={{ textAlign:'center', color:'#555', padding:'4rem' }}>Loading…</p>
+        ) : products.length === 0 ? (
+          <p style={{ textAlign:'center', color:'#555', padding:'4rem' }}>No products yet.</p>
         ) : (
           <div className="product-grid">
-            {display.map((product, index) => (
-              <div key={product._id || product.id} style={{ animationDelay:`${index * 0.1}s` }}>
+            {products.map((product, index) => (
+              <div key={product._id} style={{ animationDelay:`${index * 0.1}s` }}>
                 <ProductCard product={product} />
               </div>
             ))}

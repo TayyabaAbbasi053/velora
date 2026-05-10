@@ -17,6 +17,24 @@ const userAuth = (req, res, next) => {
   }
 };
 
+// POST /api/orders/guest  → guest checkout (no login required)
+router.post('/guest', async (req, res) => {
+  try {
+    const { orderNumber, items, total, shippingAddress } = req.body;
+    const order = await Order.create({
+      orderNumber,
+      items,
+      total,
+      shippingAddress,
+      status: 'pending',
+    });
+    res.status(201).json(order);
+  } catch (err) {
+    console.error('Guest order error:', err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // POST /api/orders  → place order (authenticated user)
 router.post('/', userAuth, async (req, res) => {
   try {
@@ -29,6 +47,7 @@ router.post('/', userAuth, async (req, res) => {
     });
     res.status(201).json(order);
   } catch (err) {
+    console.error('User order error:', err.message);
     res.status(500).json({ message: err.message });
   }
 });

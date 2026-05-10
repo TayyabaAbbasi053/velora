@@ -10,6 +10,7 @@ const productSchema = new mongoose.Schema({
   group: { type: String, default: '' },             // Eye | Face | Lip | Cheek
   image: { type: String, default: '' },             // relative path: /uploads/filename.jpg
   featured: { type: Boolean, default: false },
+  stock: { type: Number, default: 100, min: 0 },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', productSchema);

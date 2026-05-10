@@ -1,32 +1,31 @@
-// src/pages/Men.jsx
-import { Link } from 'react-router-dom';
-import { products } from '../data/products';
-import ProductCard from '../components/ProductCard'; // IMPORT THIS
+import ProductCard from '../components/ProductCard';
+import { useProducts } from '../hooks/useProducts';
 
 const Men = () => {
-  const fragranceProducts = products.filter(p => p.category === 'Men' && p.subcategory === 'Fragrance');
-  const groomingProducts = products.filter(p => p.category === 'Men' && p.subcategory === 'Grooming');
+  const { products, loading } = useProducts({ category: 'Men' });
+  const fragrance = products.filter(p => p.subcategory === 'Fragrance');
+  const grooming  = products.filter(p => p.subcategory === 'Grooming');
 
   return (
-    <div style={{ paddingTop: '120px' }} className="container">
+    <div style={{ paddingTop:'120px' }} className="container">
       <h1 className="section-title gold-text">Men's Collection</h1>
-      
-      <section style={{ marginBottom: '80px' }}>
-        <h2 className="gold-text" style={{ fontSize: '2rem', marginBottom: '2rem', borderLeft: `3px solid #c8a96b`, paddingLeft: '20px' }}>Fragrance</h2>
-        <div className="product-grid">
-          {fragranceProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+
+      <section style={{ marginBottom:'80px' }}>
+        <h2 className="gold-text" style={{ fontSize:'2rem', marginBottom:'2rem', borderLeft:'3px solid #c8a96b', paddingLeft:'20px' }}>Fragrance</h2>
+        {loading ? <p style={{ color:'#555' }}>Loading…</p> : (
+          <div className="product-grid">
+            {fragrance.map(p => <ProductCard key={p._id} product={p}/>)}
+          </div>
+        )}
       </section>
 
       <section>
-        <h2 className="gold-text" style={{ fontSize: '2rem', marginBottom: '2rem', borderLeft: `3px solid #c8a96b`, paddingLeft: '20px' }}>Grooming</h2>
-        <div className="product-grid">
-          {groomingProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <h2 className="gold-text" style={{ fontSize:'2rem', marginBottom:'2rem', borderLeft:'3px solid #c8a96b', paddingLeft:'20px' }}>Grooming</h2>
+        {loading ? <p style={{ color:'#555' }}>Loading…</p> : (
+          <div className="product-grid">
+            {grooming.map(p => <ProductCard key={p._id} product={p}/>)}
+          </div>
+        )}
       </section>
     </div>
   );

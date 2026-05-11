@@ -38,15 +38,23 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/products/stats  – dashboard summary
+// GET /api/products/stats  – dashboard summary (aggregation pipeline)
 router.get('/stats', adminAuth, async (req, res) => {
   try {
-    const all = await Product.find({});
-    res.json({
-      total:      all.length,
-      lowStock:   all.filter(p => p.stock > 0 && p.stock < 10).length,
-      outOfStock: all.filter(p => p.stock === 0).length,
-    });
+    const [result] = await Product.aggregate([
+      {
+        $group: {
+          _id: null,
+          total:      { $sum: 1 },
+          lowStock:   { $sum: { $cond: [{ $and: [{ $gt: ['$stock', 0] }, { $lt: ['$stock', 10] }] }, 1, 0] } },
+          outOfStock: { $sum: { $cond: [{ $eq: ['$stock', 0] }, 1, 0] } },
+        },
+      },
+    ]);
+    res.json(result
+      ? { total: result.total, lowStock: result.lowStock, outOfStock: result.outOfStock }
+      : { total: 0, lowStock: 0, outOfStock: 0 }
+    );
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -170,7 +178,7 @@ router.delete('/:id', adminAuth, async (req, res) => {
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// ✅ TRANSACTION ENDPOINTS (NEW)
+// ✅ TRANSACTION ENDPOINTS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 // ✅ TRANSACTION #1: Bulk Stock Update
@@ -189,26 +197,25 @@ router.post('/bulk-stock-update', adminAuth, async (req, res) => {
 
     const results = [];
 
-    // Update all products atomically
     for (const update of updates) {
       const product = await Product.findById(update.id).session(session);
-      
+
       if (!product) {
         throw new Error(`Product ${update.id} not found`);
       }
 
+      const oldStock = product.stock;
       product.stock = Math.max(0, parseInt(update.stock) || 0);
       await product.save({ session });
-      
+
       results.push({
         id: product._id,
         name: product.name,
-        oldStock: product.stock,
-        newStock: update.stock
+        oldStock,
+        newStock: product.stock
       });
     }
 
-    // All succeed together
     await session.commitTransaction();
     session.endSession();
 
@@ -219,7 +226,6 @@ router.post('/bulk-stock-update', adminAuth, async (req, res) => {
     });
 
   } catch (err) {
-    // All fail together
     await session.abortTransaction();
     session.endSession();
     console.error('Bulk stock update error:', err.message);
@@ -243,15 +249,13 @@ router.post('/bulk-delete', adminAuth, async (req, res) => {
 
     const deleted = [];
 
-    // Delete all products and their images atomically
     for (const id of ids) {
       const product = await Product.findById(id).session(session);
-      
+
       if (!product) {
         throw new Error(`Product ${id} not found - rolling back all deletions`);
       }
 
-      // Delete image file if exists
       if (product.image) {
         const imgPath = path.join(__dirname, '..', product.image);
         if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
@@ -261,7 +265,6 @@ router.post('/bulk-delete', adminAuth, async (req, res) => {
       deleted.push({ id: product._id, name: product.name });
     }
 
-    // All succeed together
     await session.commitTransaction();
     session.endSession();
 
@@ -272,7 +275,6 @@ router.post('/bulk-delete', adminAuth, async (req, res) => {
     });
 
   } catch (err) {
-    // All fail together - no products deleted
     await session.abortTransaction();
     session.endSession();
     console.error('Bulk delete error:', err.message);
@@ -298,7 +300,7 @@ router.post('/bulk-price-update', adminAuth, async (req, res) => {
 
     for (const update of updates) {
       const product = await Product.findById(update.id).session(session);
-      
+
       if (!product) {
         throw new Error(`Product ${update.id} not found`);
       }
@@ -306,7 +308,7 @@ router.post('/bulk-price-update', adminAuth, async (req, res) => {
       const oldPrice = product.price;
       product.price = update.price;
       await product.save({ session });
-      
+
       results.push({
         id: product._id,
         name: product.name,

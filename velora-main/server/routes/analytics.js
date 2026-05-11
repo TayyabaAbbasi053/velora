@@ -271,7 +271,7 @@ router.get('/products-by-subcategory', adminAuth, async (req, res) => {
   }
 });
 
-// ✅ AGGREGATION EXAMPLE #7: Customer Order History (for logged-in users)
+// ✅ AGGREGATION EXAMPLE #7: Customer Order History
 router.get('/customer-insights', adminAuth, async (req, res) => {
   try {
     const results = await Order.aggregate([
@@ -280,8 +280,6 @@ router.get('/customer-insights', adminAuth, async (req, res) => {
         $group: {
           _id: '$user',
           totalOrders: { $count: {} },
-          totalSpent: { $sum: 1 }, // Would need to parse total field for actual sum
-          averageOrderValue: { $avg: 1 },
           lastOrderDate: { $max: '$createdAt' },
           statuses: { $push: '$status' }
         }

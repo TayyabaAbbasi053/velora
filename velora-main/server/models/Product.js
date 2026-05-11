@@ -13,4 +13,6 @@ const productSchema = new mongoose.Schema({
   stock: { type: Number, default: 100, min: 0 },
 }, { timestamps: true });
 
+productSchema.index({ category: 1, subcategory: 1, group: 1 });
+
 module.exports = mongoose.model('Product', productSchema);

@@ -1,4 +1,4 @@
-// routes/products.js
+// routes/products.js - WITH TRANSACTION ENDPOINTS
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const Product = require('../models/Product');
 const adminAuth = require('../middleware/adminAuth');
+const mongoose = require('mongoose');
 
 // Multer config – store images in /uploads
 const storage = multer.diskStorage({
@@ -164,6 +165,169 @@ router.delete('/:id', adminAuth, async (req, res) => {
     await product.deleteOne();
     res.json({ message: 'Product deleted' });
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ✅ TRANSACTION ENDPOINTS (NEW)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// ✅ TRANSACTION #1: Bulk Stock Update
+// POST /api/products/bulk-stock-update
+// Body: { updates: [{ id: "...", stock: 50 }, { id: "...", stock: 30 }] }
+router.post('/bulk-stock-update', adminAuth, async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { updates } = req.body;
+
+    if (!Array.isArray(updates) || updates.length === 0) {
+      throw new Error('Updates array required');
+    }
+
+    const results = [];
+
+    // Update all products atomically
+    for (const update of updates) {
+      const product = await Product.findById(update.id).session(session);
+      
+      if (!product) {
+        throw new Error(`Product ${update.id} not found`);
+      }
+
+      product.stock = Math.max(0, parseInt(update.stock) || 0);
+      await product.save({ session });
+      
+      results.push({
+        id: product._id,
+        name: product.name,
+        oldStock: product.stock,
+        newStock: update.stock
+      });
+    }
+
+    // All succeed together
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json({
+      message: 'Bulk stock update successful',
+      updated: results.length,
+      results
+    });
+
+  } catch (err) {
+    // All fail together
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Bulk stock update error:', err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ✅ TRANSACTION #2: Bulk Delete Products
+// POST /api/products/bulk-delete
+// Body: { ids: ["id1", "id2", "id3"] }
+router.post('/bulk-delete', adminAuth, async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new Error('Product IDs array required');
+    }
+
+    const deleted = [];
+
+    // Delete all products and their images atomically
+    for (const id of ids) {
+      const product = await Product.findById(id).session(session);
+      
+      if (!product) {
+        throw new Error(`Product ${id} not found - rolling back all deletions`);
+      }
+
+      // Delete image file if exists
+      if (product.image) {
+        const imgPath = path.join(__dirname, '..', product.image);
+        if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+      }
+
+      await product.deleteOne({ session });
+      deleted.push({ id: product._id, name: product.name });
+    }
+
+    // All succeed together
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json({
+      message: 'Bulk delete successful',
+      deleted: deleted.length,
+      products: deleted
+    });
+
+  } catch (err) {
+    // All fail together - no products deleted
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Bulk delete error:', err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ✅ TRANSACTION #3: Bulk Price Update
+// POST /api/products/bulk-price-update
+// Body: { updates: [{ id: "...", price: "PKR 5,000" }] }
+router.post('/bulk-price-update', adminAuth, async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { updates } = req.body;
+
+    if (!Array.isArray(updates) || updates.length === 0) {
+      throw new Error('Updates array required');
+    }
+
+    const results = [];
+
+    for (const update of updates) {
+      const product = await Product.findById(update.id).session(session);
+      
+      if (!product) {
+        throw new Error(`Product ${update.id} not found`);
+      }
+
+      const oldPrice = product.price;
+      product.price = update.price;
+      await product.save({ session });
+      
+      results.push({
+        id: product._id,
+        name: product.name,
+        oldPrice,
+        newPrice: update.price
+      });
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json({
+      message: 'Bulk price update successful',
+      updated: results.length,
+      results
+    });
+
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Bulk price update error:', err.message);
     res.status(500).json({ message: err.message });
   }
 });

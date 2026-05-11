@@ -1,8 +1,9 @@
+import React from 'react';
 // src/pages/Admin.jsx
 import { useState, useEffect, useRef } from 'react';
 import { seedCatalog } from '../data/seedCatalog';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const CATEGORIES   = ['Women', 'Men', 'Hair care', 'Baby care', 'Health And Skin Care'];
 const SUBCATEGORIES = { Women: ['Fragrance', 'Makeup'], Men: ['Fragrance', 'Grooming'], 'Hair care': [], 'Baby care': [], 'Health And Skin Care': [] };

@@ -1,13 +1,31 @@
 // server.js
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+
+// Manual CORS middleware (Express 5 compatible)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Load routes immediately
+app.use('/api/auth',      require('./routes/auth'));
+app.use('/api/products',  require('./routes/products'));
+app.use('/api/orders',    require('./routes/orders'));
+app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/reviews',   require('./routes/reviews'));
+app.use('/api/wishlist',  require('./routes/wishlist'));
 
 const mongoose = require('mongoose');
 
@@ -18,13 +36,7 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => {
   console.log('MongoDB Connected ✅');
 
-  // Load routes AFTER connection is established
-  app.use('/api/auth',      require('./routes/auth'));
-  app.use('/api/products',  require('./routes/products'));
-  app.use('/api/orders',    require('./routes/orders'));
-  app.use('/api/analytics', require('./routes/analytics'));
-
-  const PORT = process.env.PORT || 5000;
+  const PORT = process.env.PORT || 5001;
   app.listen(PORT, () => console.log(`Server running on port ${PORT} 🚀`));
 
 }).catch(err => {

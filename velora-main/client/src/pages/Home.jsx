@@ -1,10 +1,12 @@
+import React from 'react';
 import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
-import { useProducts } from '../hooks/useProducts';
+import { useProducts, useReviewAverages } from '../hooks/useProducts';
 import { useEffect } from 'react';
 
 const Home = () => {
   const { products, loading } = useProducts();
+  const averages = useReviewAverages(products);
 
   useEffect(() => {
     document.body.classList.add('page-transition-enter');
@@ -24,7 +26,7 @@ const Home = () => {
           <div className="product-grid">
             {products.map((product, index) => (
               <div key={product._id} style={{ animationDelay:`${index * 0.1}s` }}>
-                <ProductCard product={product} />
+                <ProductCard product={product} avgRating={averages[product._id] || 0} />
               </div>
             ))}
           </div>

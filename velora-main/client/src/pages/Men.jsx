@@ -1,8 +1,10 @@
+import React from 'react';
 import ProductCard from '../components/ProductCard';
-import { useProducts } from '../hooks/useProducts';
+import { useProducts, useReviewAverages } from '../hooks/useProducts';
 
 const Men = () => {
   const { products, loading } = useProducts({ category: 'Men' });
+  const averages = useReviewAverages(products);
   const fragrance = products.filter(p => p.subcategory === 'Fragrance');
   const grooming  = products.filter(p => p.subcategory === 'Grooming');
 
@@ -14,7 +16,7 @@ const Men = () => {
         <h2 className="gold-text" style={{ fontSize:'2rem', marginBottom:'2rem', borderLeft:'3px solid #c8a96b', paddingLeft:'20px' }}>Fragrance</h2>
         {loading ? <p style={{ color:'#555' }}>Loading…</p> : (
           <div className="product-grid">
-            {fragrance.map(p => <ProductCard key={p._id} product={p}/>)}
+            {fragrance.map(p => <ProductCard key={p._id} product={p} avgRating={averages[p._id] || 0}/>)}
           </div>
         )}
       </section>
@@ -23,7 +25,7 @@ const Men = () => {
         <h2 className="gold-text" style={{ fontSize:'2rem', marginBottom:'2rem', borderLeft:'3px solid #c8a96b', paddingLeft:'20px' }}>Grooming</h2>
         {loading ? <p style={{ color:'#555' }}>Loading…</p> : (
           <div className="product-grid">
-            {grooming.map(p => <ProductCard key={p._id} product={p}/>)}
+            {grooming.map(p => <ProductCard key={p._id} product={p} avgRating={averages[p._id] || 0}/>)}
           </div>
         )}
       </section>

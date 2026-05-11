@@ -1,3 +1,4 @@
+import React from 'react';
 // src/pages/Orders.jsx
 import Navbar from '../components/Navbar';
 import useAuthStore from '../store/authStore';

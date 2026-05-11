@@ -2,18 +2,21 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+const getId = (item) => item._id || item.id;
+
 const useCartStore = create(
   persist(
     (set, get) => ({
       items: [],
       addItem: (product) => {
         const items = get().items;
-        const existingItem = items.find(item => item.id === product.id);
-        
+        const productId = getId(product);
+        const existingItem = items.find(item => getId(item) === productId);
+
         if (existingItem) {
           set({
             items: items.map(item =>
-              item.id === product.id
+              getId(item) === productId
                 ? { ...item, quantity: item.quantity + 1 }
                 : item
             )
@@ -23,7 +26,7 @@ const useCartStore = create(
         }
       },
       removeItem: (productId) => {
-        set({ items: get().items.filter(item => item.id !== productId) });
+        set({ items: get().items.filter(item => getId(item) !== productId) });
       },
       updateQuantity: (productId, quantity) => {
         if (quantity <= 0) {
@@ -31,7 +34,7 @@ const useCartStore = create(
         } else {
           set({
             items: get().items.map(item =>
-              item.id === productId ? { ...item, quantity } : item
+              getId(item) === productId ? { ...item, quantity } : item
             )
           });
         }
@@ -42,8 +45,8 @@ const useCartStore = create(
       },
       getTotalPrice: () => {
         return get().items.reduce((total, item) => {
-          const price = parseFloat(item.price.replace('$', ''));
-          return total + price * item.quantity;
+          const price = parseFloat(String(item.price).replace('$', ''));
+          return total + (isNaN(price) ? 0 : price * item.quantity);
         }, 0).toFixed(2);
       }
     }),

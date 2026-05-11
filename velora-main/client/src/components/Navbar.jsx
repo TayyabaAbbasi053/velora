@@ -1,17 +1,20 @@
+import React from 'react';
 // src/components/Navbar.jsx
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, Search } from 'lucide-react';
+import { ShoppingCart, User, Search, Heart } from 'lucide-react';
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
+import useWishlistStore from '../store/wishlistStore';
 import { useState } from 'react';
 import { imgUrl } from '../hooks/useProducts';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { getTotalItems } = useCartStore();
   const { isAuthenticated, user, logout } = useAuthStore();
+  const wishlistCount = useWishlistStore(s => s.items.length);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -105,6 +108,19 @@ const Navbar = () => {
             <Search size={18} style={{ cursor: "pointer", color: "#f5f5f5" }} onClick={() => setShowSearch(true)} />
           )}
 
+          <div style={{ cursor: "pointer", position: "relative" }} onClick={() => navigate('/wishlist')}>
+            <Heart size={18} style={{ color: "#f5f5f5" }} />
+            {wishlistCount > 0 && (
+              <span style={{
+                position: "absolute", top: "-8px", right: "-12px",
+                background: "linear-gradient(135deg, #9ca88b 0%, #7a8768 100%)",
+                color: "#050505", fontSize: "0.65rem", fontWeight: "bold",
+                width: "18px", height: "18px", borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center"
+              }}>{wishlistCount}</span>
+            )}
+          </div>
+
           <div className="cart-badge" style={{ cursor: "pointer", position: "relative" }} onClick={() => setShowCart(true)}>
             <ShoppingCart size={18} style={{ color: "#f5f5f5" }} />
             {totalItems > 0 && (
@@ -126,6 +142,7 @@ const Navbar = () => {
                   <span className="dropdown-item" style={{ color: "#9ca88b" }}>Welcome, {user?.name}</span>
                   <div className="dropdown-divider"></div>
                   <Link to="/orders">My Orders</Link>
+                  <Link to="/wishlist">My Wishlist</Link>
                   <button onClick={handleLogout} className="dropdown-item" style={{ background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer", color: "#f5f5f5" }}>Logout</button>
                 </>
               ) : (
@@ -360,13 +377,23 @@ const AuthModal = ({ mode, onClose }) => {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [name, setName]         = useState('');
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
   const { login, signup }       = useAuthStore();
 
-  const handleSubmit = e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (mode === 'login') login(email, password);
-    else signup(email, password, name);
-    onClose();
+    setError('');
+    setLoading(true);
+    try {
+      if (mode === 'login') await login(email, password);
+      else await signup(email, password, name);
+      onClose();
+    } catch (err) {
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -376,6 +403,11 @@ const AuthModal = ({ mode, onClose }) => {
         <h2 style={{ marginBottom: '1.5rem', textAlign: 'center', fontSize: '2rem' }}>
           {mode === 'login' ? 'Login' : 'Create Account'}
         </h2>
+        {error && (
+          <div style={{ background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)', color: '#ff6060', borderRadius: '8px', padding: '10px 14px', fontSize: '0.82rem', marginBottom: '16px' }}>
+            {error}
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           {mode === 'signup' && (
             <div className="form-group">
@@ -391,8 +423,8 @@ const AuthModal = ({ mode, onClose }) => {
             <label>Password</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
           </div>
-          <button type="submit" className="btn-primary" style={{ width: '100%' }}>
-            {mode === 'login' ? 'Login' : 'Create Account'}
+          <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={loading}>
+            {loading ? 'Please wait…' : mode === 'login' ? 'Login' : 'Create Account'}
           </button>
         </form>
       </div>

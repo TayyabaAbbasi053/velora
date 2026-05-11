@@ -1,9 +1,11 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { useProducts } from '../hooks/useProducts';
+import { useProducts, useReviewAverages } from '../hooks/useProducts';
 
 const Women = () => {
   const { products, loading } = useProducts({ category: 'Women' });
+  const averages = useReviewAverages(products);
 
   const fragrance  = products.filter(p => p.subcategory === 'Fragrance');
   const eyeProds   = products.filter(p => p.subcategory === 'Makeup' && p.group === 'Eye');
@@ -20,7 +22,7 @@ const Women = () => {
         <h2 className="gold-text" style={{ fontSize:'2rem', marginBottom:'2rem', borderLeft:'3px solid var(--sage)', paddingLeft:'20px' }}>Fragrance</h2>
         {loading ? <p style={{ color:'#555' }}>Loading…</p> : (
           <div className="product-grid">
-            {fragrance.slice(0, 4).map(p => <ProductCard key={p._id} product={p}/>)}
+            {fragrance.slice(0, 4).map(p => <ProductCard key={p._id} product={p} avgRating={averages[p._id] || 0}/>)}
           </div>
         )}
         <div style={{ textAlign:'center', marginTop:'2rem' }}>

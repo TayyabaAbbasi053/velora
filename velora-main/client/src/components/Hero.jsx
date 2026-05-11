@@ -1,3 +1,4 @@
+import React from 'react';
 // src/components/Hero.jsx
 import heroImage from "../assets/hero/hero.jpg";
 

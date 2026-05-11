@@ -1,11 +1,13 @@
+import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useProducts } from '../hooks/useProducts';
+import { useProducts, useReviewAverages } from '../hooks/useProducts';
 import ProductCard from '../components/ProductCard';
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const { products, loading } = useProducts();
+  const averages = useReviewAverages(products);
 
   const results = products.filter(p =>
     p.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -36,7 +38,7 @@ const SearchResults = () => {
 
         <div className="products-grid">
           {results.map(product => (
-            <ProductCard key={product._id} product={product} />
+            <ProductCard key={product._id} product={product} avgRating={averages[product._id] || 0} />
           ))}
         </div>
       </div>

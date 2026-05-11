@@ -1,6 +1,7 @@
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { useProducts } from '../hooks/useProducts';
+import { useProducts, useReviewAverages } from '../hooks/useProducts';
 
 const CategoryPage = () => {
   const { subcategory, group } = useParams();
@@ -37,6 +38,7 @@ const CategoryPage = () => {
   }
 
   const { products, loading } = useProducts(filters);
+  const averages = useReviewAverages(products);
 
   return (
     <div style={{ paddingTop:'120px' }} className="container">
@@ -51,7 +53,7 @@ const CategoryPage = () => {
         <p style={{ textAlign:'center', padding:'4rem', color:'#a0a0a0' }}>No products found in this category.</p>
       ) : (
         <div className="product-grid">
-          {products.map(p => <ProductCard key={p._id} product={p}/>)}
+          {products.map(p => <ProductCard key={p._id} product={p} avgRating={averages[p._id] || 0}/>)}
         </div>
       )}
     </div>

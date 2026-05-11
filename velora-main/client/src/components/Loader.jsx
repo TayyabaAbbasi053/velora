@@ -1,3 +1,4 @@
+import React from 'react';
 // src/components/Loader.jsx
 const Loader = () => {
   return (

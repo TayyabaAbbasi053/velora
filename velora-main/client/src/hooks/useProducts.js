@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 // Returns the correct displayable image URL for a product
 export function imgUrl(image) {
@@ -33,4 +33,25 @@ export function useProducts(filters = {}) {
   }, [category, subcategory, group]);
 
   return { products, loading, error };
+}
+
+// Fetches average ratings for a list of products
+export function useReviewAverages(products) {
+  const [averages, setAverages] = useState({});
+
+  useEffect(() => {
+    if (!products.length) return;
+    const ids = products.map(p => p._id).filter(Boolean).join(',');
+    if (!ids) return;
+    fetch(`${API}/api/reviews/averages?ids=${ids}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        const map = {};
+        data.forEach(d => { map[d.productId] = d.avg; });
+        setAverages(map);
+      })
+      .catch(() => {});
+  }, [products]);
+
+  return averages;
 }

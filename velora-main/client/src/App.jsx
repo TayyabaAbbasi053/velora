@@ -1,4 +1,5 @@
 // src/App.jsx
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -12,6 +13,7 @@ import CategoryPage from './pages/CategoryPage';
 import Orders from './pages/Orders';
 import Admin from './pages/Admin';
 import SearchResults from './pages/SearchResults';
+import Wishlist from './pages/Wishlist';
 
 function Layout() {
   const location = useLocation();
@@ -33,6 +35,7 @@ function Layout() {
         <Route path="/product/:productId" element={<ProductDetails />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/search" element={<SearchResults />} />
+        <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/admin" element={<Admin />} />
       </Routes>
     </div>

@@ -14,7 +14,17 @@ const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuthStore();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const totalItems = getTotalItems();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchTerm.trim()) return;
+    navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+    setShowSearch(false);
+    setSearchTerm('');
+  };
 
   const handleLogout = () => {
     logout();
@@ -71,7 +81,29 @@ const Navbar = () => {
 
           <div style={{ width: "1px", height: "30px", background: "linear-gradient(180deg, transparent, rgba(156,168,139,0.5), transparent)", margin: "0 0.5rem" }}></div>
 
-          <Search size={18} style={{ cursor: "pointer", color: "#f5f5f5" }} />
+          {showSearch ? (
+            <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                autoFocus
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                onKeyDown={e => e.key === 'Escape' && setShowSearch(false)}
+                placeholder="Search products..."
+                style={{
+                  background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(156,168,139,0.4)',
+                  borderRadius: '6px', color: '#f5f5f5', padding: '5px 12px',
+                  fontSize: '0.85rem', outline: 'none', width: '200px'
+                }}
+              />
+              <button type="submit" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                <Search size={16} style={{ color: '#9ca88b' }} />
+              </button>
+              <button type="button" onClick={() => { setShowSearch(false); setSearchTerm(''); }}
+                style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '1.1rem', padding: 0 }}>×</button>
+            </form>
+          ) : (
+            <Search size={18} style={{ cursor: "pointer", color: "#f5f5f5" }} onClick={() => setShowSearch(true)} />
+          )}
 
           <div className="cart-badge" style={{ cursor: "pointer", position: "relative" }} onClick={() => setShowCart(true)}>
             <ShoppingCart size={18} style={{ color: "#f5f5f5" }} />

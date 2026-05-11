@@ -11,6 +11,7 @@ import ProductDetails from './pages/ProductDetails';
 import CategoryPage from './pages/CategoryPage';
 import Orders from './pages/Orders';
 import Admin from './pages/Admin';
+import SearchResults from './pages/SearchResults';
 
 function Layout() {
   const location = useLocation();
@@ -31,6 +32,7 @@ function Layout() {
         <Route path="/hair-care" element={<HairCare />} />
         <Route path="/product/:productId" element={<ProductDetails />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/search" element={<SearchResults />} />
         <Route path="/admin" element={<Admin />} />
       </Routes>
     </div>

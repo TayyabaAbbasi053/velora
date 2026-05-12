@@ -7,7 +7,7 @@ const app = express();
 
 // Manual CORS middleware (Express 5 compatible)
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.header('Access-Control-Allow-Origin', process.env.CLIENT_URL || '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') {
@@ -43,3 +43,5 @@ mongoose.connect(process.env.MONGO_URI, {
   console.error('MongoDB connection error:', err.message);
   process.exit(1);
 });
+
+module.exports = app; // ✅ added for Vercel
